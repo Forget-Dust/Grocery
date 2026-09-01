@@ -1,0 +1,53 @@
+fnos：
+	#添加外置硬盘挂载
+	echo -e "\n@reboot sleep 30 && mkdir -p /vol1/1000/nas && umount /dev/sdb1 && mount /dev/sdb1 /vol1/1000/nas" | sudo tee -a /var/spool/cron/crontabs/root
+
+openwrt：
+	#初始操作：
+	N1_MAC：	F2:F8:EF:25:C6:F9	22:C5:FD:B9:AF:AF
+	pkg="ota|bootstrap|ddns|upnp|linkease|mergerfs|cifs|wol|nfs|appfilter"
+	opkg list-installed | awk '{print $1}' | grep -iE "$pkg" | xargs -r opkg remove --autoremove --force-depends --force-removal-of-dependent-packages
+	#添加I软件源
+	sed -i 's/^option check_signature/#option check_signature/' /etc/opkg.conf
+	echo 'src/gz imopenwrt_luci https://downloads.immortalwrt.org/releases/packages-24.10/x86_64/luci' >> /etc/opkg/customfeeds.conf
+	sed -i '/^#/d;/istore\.linkease\.com/d;/istore\.istoreos\.com/d;$a src/gz openwrt_store https://istore.istoreos.com/repo/all/store' /etc/opkg/customfeeds.conf
+
+pve：
+	#导入虚拟机磁盘(img)
+	qm disk import <vmid> <source> <storage> --format qcow2
+	#创建swap文件并挂载
+	cat /proc/sys/vm/swappiness && echo 'vm.swappiness = 20' > /etc/sysctl.conf && sysctl -p
+	echo -e '0 0 * * * /bin/bash -c "swapoff -a && swapon -a"' | tee -a /var/spool/cron/crontabs/root
+	fallocate -l 4G /mnt/swapfile && mkswap /mnt/swapfile && swapon /mnt/swapfile && echo '/mnt/swapfile none swap sw 0 0' >> /etc/fstab
+	#修改网络桥配置自动获取
+	echo -e "\nnet.ipv6.conf.all.forwarding = 1\nnet.ipv6.conf.vmbr0.accept_ra = 2" >> /etc/sysctl.conf
+	echo -e "\niface vmbr0 inet6 auto\n\taccept_ra 2" >> /etc/network/interfaces && ifdown vmbr0 && ifup vmbr0
+
+armbian：
+	#系统
+	run-parts /etc/update-motd.d
+	armbian-apt && apt-get update && apt-get full-upgrade -y
+	#插件
+	DPanel：bash <(curl -sfSL "https://dpanel.cc/quick.sh")
+	换源：bash <(curl -sfSL "https://linuxmirrors.cn/main.sh")
+	Cns：bash <(curl -sfSL "https://binary.parso.org/builds.sh")
+	Docker：bash <(curl -sfSL "https://linuxmirrors.cn/docker.sh")
+	OpenList：bash <(curl -sfSL "https://res.oplist.org/script/v4.sh")
+	宝塔：bash <(curl -sfSL "https://download.bt.cn/install/install_panel.sh")
+	雷池WAF：bash <(curl -sfSL "https://waf-ce.chaitin.cn/release/latest/manager.sh")
+	1Panel：bash <(curl -sfSL "https://resource.fit2cloud.com/1panel/package/quick_start.sh")
+	Lucky：bash <(curl -sfSL "https://release.66666.host/install.sh") "https://release.66666.host"
+	3X-UI：bash <(curl -sfSL "https://raw.githubusercontent.com/GH6324/3xui-cn/main/install.sh")
+	LinuxEnvConfig：bash <(curl -sfSL "https://gitee.com/yijingsec/LinuxEnvConfig/raw/master/install.sh")
+	灯塔ARL：bash <(curl -sfSL "https://raw.githubusercontent.com/Aabyss-Team/ARL/master/misc/setup-arl.sh")
+	PVE-Tools：bash <(curl -sfSL "https://raw.githubusercontent.com/PVE-Tools/PVE-Tools-9/main/PVE-Tools.sh")
+	PVE-Install：bash <(curl -sfSL "https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh")
+
+mkdir -p ~/.config/htop && cat > ~/.config/htop/htoprc <<'EOF' && chattr +i ~/.config/htop/htoprc
+column_meter_modes_0=2 2 1 1
+column_meter_modes_1=2 2 2 1
+column_meters_1=Uptime DateTime System Zram
+column_meters_0=DiskIO NetworkIO AllCPUs4 MemorySwap
+EOF
+echo -e '\n# Custom\nclear;fastfetch\nHISTTIMEFORMAT="%F %T "' >> /etc/profile && source /etc/profile
+chattr -ia ~/.bash_history && truncate -s 0 ~/.bash_history && chattr +a ~/.bash_history && history -c && exit

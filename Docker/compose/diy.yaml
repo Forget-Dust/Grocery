@@ -1,0 +1,122 @@
+networks:
+  diy:
+    name: diy
+    driver: bridge
+    # enable_ipv6: true
+    # ipam: {config: [{subnet: "172.28.0.0/16", gateway: "172.28.0.1"}, {subnet: "fd00:diy::/64", gateway: "fd00:diy::1"}]}
+
+services:
+# 看门狗
+  watchtower:
+    networks: [diy]
+    restart: always
+    container_name: watchtower
+    image: containrrr/watchtower:latest
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+    environment: {TZ: Asia/Shanghai, WATCHTOWER_SCHEDULE: "0 0 6 * * *"}
+
+# OpenList
+  openlist:
+    user: "0:0"
+    networks: [diy]
+    ports: ["8010:5244"]
+    restart: unless-stopped
+    container_name: openlist
+    environment: {TZ: Asia/Shanghai}
+    image: openlistteam/openlist:latest-lite-aio
+    volumes: ["./data:/overlay/local_disk","./data/openlist:/opt/openlist/data"]
+
+# 联通Token
+  token:
+    networks: [diy]
+    profiles: [disabled]
+    ports: ["8011:5702"]
+    container_name: token
+    restart: unless-stopped
+    image: twh808/unicom-login:latest
+
+# Lucky
+  lucky:
+    networks: [diy]
+    profiles: [disabled]
+    container_name: lucky
+    ports: ["8012:16601"]
+    image: gdy666/lucky:v2
+    restart: unless-stopped
+    environment: {TZ: Asia/Shanghai}
+    volumes: ["./data/lucky:/goodluck/data"]
+
+# 青龙面板
+  qinglong:
+    networks: [diy]
+    ports: ["8013:5700"]
+    profiles: [disabled]
+    restart: unless-stopped
+    container_name: qinglong
+    image: whyour/qinglong:latest
+    environment: {TZ: Asia/Shanghai}
+    volumes: ["./data/qinglong:/ql/data"]
+  
+# 呆呆面板
+  ddpanel:
+    networks: [diy]
+    ports: ["8014:5700"]
+    profiles: [disabled]
+    container_name: ddpanel
+    restart: unless-stopped
+    environment: {TZ: Asia/Shanghai}
+    image: linzixuanzz/daidai-panel:latest
+    volumes: ["./data/Dumb-Panel:/app/Dumb-Panel"]
+
+# 1Panel
+  1panel:
+    restart: always
+    networks: [diy]
+    profiles: [disabled]
+    ports: ["8015:10086"]
+    container_name: 1panel
+    image: moelin/1panel:latest
+    environment: {TZ: Asia/Shanghai,BASE_DIR: /opt,ENTRANCE: 1panel}
+    volumes: ["./data/1panel:/opt","/var/run/docker.sock:/var/run/docker.sock"]
+
+# Dpanel
+  dpanel:
+    networks: [diy]
+    restart: always
+    ports: ["8016:8080"]
+    profiles: [disabled]
+    container_name: dpanel
+    image: dpanel/dpanel:lite
+    environment: {TZ: Asia/Shanghai}
+    volumes: ["./data/dpanel:/dpanel","/var/run/docker.sock:/var/run/docker.sock"]
+
+# AdGuardHome
+  adguardhome:
+    networks: [diy]
+    profiles: [disabled]
+    restart: unless-stopped
+    container_name: adguardhome
+    environment: {TZ: Asia/Shanghai}
+    image: adguard/adguardhome:latest
+    ports: ["8017:3000","153:53","853:853"]
+    volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
+
+# Apt-Linux
+  aptlinux:
+    networks: [diy]
+    restart: always
+    profiles: [disabled]
+    image: debian:bookworm
+    container_name: aptlinux
+    environment: {TZ: Asia/Shanghai}
+    entrypoint: ["/bin/bash", "-c", "set -e;M=/var/cache/.mirror_done;if [ ! -f \"$$M\" ];then (command -v curl &>/dev/null || (apt-get update && apt-get install -y curl));bash <(curl -sfSL https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh) --source mirrors.tencent.com --protocol http --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$M\";fi;exec tail -F /dev/null"]
+
+# Yum-Linux
+  yumlinux:
+    networks: [diy]
+    restart: always
+    image: rockylinux:9
+    profiles: [disabled]
+    container_name: yumlinux
+    environment: {TZ: Asia/Shanghai}
+    entrypoint: ["/bin/bash", "-c", "set -e;M=/var/cache/.mirror_done;if [ ! -f \"$$M\" ];then (command -v curl &>/dev/null || yum install -y curl);bash <(curl -sfSL https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh) --source mirrors.tencent.com --protocol http --use-intranet-source false --install-epel true --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$M\";fi;exec tail -F /dev/null"]

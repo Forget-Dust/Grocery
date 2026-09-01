@@ -1,0 +1,174 @@
+name: Build Release (universal script runner)
+
+# 通用脚本构建/发版：本地/远程脚本（单文件 或 整压缩包）→ 执行 → 捕获 out/ → 发布
+#   - 子脚本：以主脚本目录为工作目录并注入 PATH
+#   - 解释器：手动指定 > 扩展名 > shebang > bash
+#   - 标签 = 脚本名去扩展名（非法字符转 -）；allow_overwrite 先删旧 release/tag 实现覆盖
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: '本地仓库内路径，或远程 URL（http/https）。'
+        required: true
+        default: 'Linux/scripts/Linux_Kernel_Build.sh'
+      fetch:
+        description: '远程获取方式：auto=按扩展名判断, file=单文件, archive=整压缩包(带上子脚本)。'
+        required: false
+        default: 'auto'
+      entry:
+        description: '仅 archive 模式需要：压缩包内入口脚本的相对路径，如 myproj/build.sh。'
+        required: false
+        default: ''
+      interpreter:
+        description: '执行命令（bash/python3/perl/node/sh…）。留空=自动识别。'
+        required: false
+        default: ''
+      workdir:
+        description: '工作目录覆盖。留空=主脚本所在目录（子脚本相对此目录调用）。'
+        required: false
+        default: ''
+      out_dir:
+        description: '产物输出目录，脚本把文件写到这里，工作流从中捕获发布。'
+        required: false
+        default: 'out'
+      allow_overwrite:
+        description: '允许覆盖已存在的同名发行版/标签（先删旧 release 与 tag 再发布）。'
+        required: false
+        type: boolean
+        default: true
+      release:
+        description: '构建完成后发布到发行版。'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # 仅发版 / 删 tag 需要
+
+concurrency:
+  group: script-release-${{ inputs.script }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      OUT_DIR: ${{ inputs.out_dir }}
+    steps:
+      # ---------- 获取脚本 + 计算标签 ----------
+      - name: Checkout repository
+        if: ${{ !startsWith(inputs.script, 'http') }}
+        uses: actions/checkout@v4
+
+      - name: Prepare script + tag
+        id: prep
+        env:
+          SCRIPT: ${{ inputs.script }}
+          FETCH: ${{ inputs.fetch }}
+          ENTRY_IN: ${{ inputs.entry }}
+        run: |
+          set -euo pipefail
+          [ -n "$SCRIPT" ] || { echo "::error::script 不能为空"; exit 1; }
+
+          if [[ "$SCRIPT" == http* ]]; then
+            [ "$FETCH" = auto ] && case "$SCRIPT" in
+              *.tar.gz|*.tgz|*.tar.xz|*.tar.bz2|*.zip) FETCH=archive ;;
+              *) FETCH=file ;;
+            esac
+            if [ "$FETCH" = archive ]; then
+              [ -n "$ENTRY_IN" ] || { echo "::error::archive 模式必须提供 entry"; exit 1; }
+              curl -fsSL "$SCRIPT" -o /tmp/src.archive
+              rm -rf vendor && mkdir vendor
+              case "$SCRIPT" in
+                *.zip) unzip -qo /tmp/src.archive -d vendor ;;
+                *)     tar -xf /tmp/src.archive -C vendor ;;
+              esac
+              EP="vendor/$ENTRY_IN"
+            else
+              EP="${SCRIPT##*/}"
+              curl -fsSL "$SCRIPT" -o "$EP"
+            fi
+          else
+            EP="$SCRIPT"
+          fi
+
+          [ -f "$EP" ] || { echo "::error::入口脚本不存在 -> $EP"; exit 1; }
+          chmod +x "$EP"
+          echo "entry=$EP" >> "$GITHUB_OUTPUT"
+
+          # 标签 = 脚本名去扩展名，非法字符转 -（printf 避免尾换行被 tr 吃掉）
+          TAG="$(printf '%s' "${EP##*/}" | sed 's/\.[^.]*$//' | tr -c '[:alnum:]._-' '-')"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "入口=$EP  标签=$TAG"
+
+      # ---------- 执行 ----------
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache /usr/share/swift
+          sudo apt-get clean
+          df -h /
+
+      - name: Run build script
+        env:
+          ENTRY: ${{ steps.prep.outputs.entry }}
+          INTERP: ${{ inputs.interpreter }}
+          WORKDIR_OVERRIDE: ${{ inputs.workdir }}
+        run: |
+          set -euo pipefail
+          NAME="${ENTRY##*/}"
+          OUTDIR="$GITHUB_WORKSPACE/$OUT_DIR"
+
+          # 解释器：手动 > 扩展名 > shebang > bash
+          RUN="$INTERP"
+          if [ -z "$RUN" ]; then
+            case "$NAME" in
+              *.py) RUN=python3 ;;
+              *.pl) RUN=perl   ;;
+              *.rb) RUN=ruby   ;;
+              *.js) RUN=node   ;;
+              *) case "$(head -1 "$ENTRY")" in
+                   *python*) RUN=python3 ;;
+                   *perl*)   RUN=perl   ;;
+                   *bash*)   RUN=bash   ;;
+                   *sh)      RUN=sh     ;;
+                   *)        RUN=bash   ;;
+                 esac ;;
+            esac
+          fi
+
+          mkdir -p "$OUTDIR"
+          cd "${WORKDIR_OVERRIDE:-$(dirname "$ENTRY")}"
+          export PATH="$PWD:$PATH"   # 子脚本可直接按名字调用
+          echo "执行: $RUN $NAME (workdir=$PWD, out=$OUTDIR)"
+          OUTDIR="$OUTDIR" "$RUN" "$NAME"
+
+      # ---------- 产物 ----------
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: '${{ inputs.out_dir }}/**'
+          if-no-files-found: error
+          retention-days: 30
+
+      # ---------- 发版（覆盖式） ----------
+      - name: Delete existing release/tag (overwrite)
+        if: ${{ inputs.allow_overwrite }}
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          git push --delete origin "$TAG" || true
+
+      - name: Release
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prep.outputs.tag }}
+          name: ${{ steps.prep.outputs.tag }}
+          files: '${{ inputs.out_dir }}/**'
+          make_latest: true
+          generate_release_notes: false
