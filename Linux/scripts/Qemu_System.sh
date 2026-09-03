@@ -13,7 +13,7 @@ declare -a Uefi='-drive if=pflash,format=raw,readonly=on,unit=0,file="/usr/share
 
 for pkg in $Packages ;do apt-get install -qq -fy "$pkg" ;done
 [[ -f "$Data" ]] || qemu-img create -f qcow2 "$Data" 70G
-[[ -f "$System" ]] || ([[ -f "$Img" ]] && (qemu-img convert -p -f raw -O qcow2 "$Img" "$System") || (echo "System file does not exist" && exit 1))
+[[ -f "$System" ]] || ([[ -f "$Img" ]] && (qemu-img convert -p -f raw -O qcow2 "$Img" "$System" && qemu-img resize "$System" +2G && rm -rf "$Img") || (echo "System file does not exist" && exit 1))
 
 case "$Arch" in
 	aarch64)
