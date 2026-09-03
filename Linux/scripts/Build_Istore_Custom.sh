@@ -69,7 +69,7 @@ inject() {
     [[ -d "Diy" ]] && { mkdir -p "$SQ_ROOT/root"; cp -rf Diy "$SQ_ROOT/root/Diy"; ok "📦 注入 Diy → /root/Diy"; } || warn "未找到 Diy/ 目录，跳过"
     cat > "$SQ_ROOT/root/Diy/Install.sh" << 'INEOF' && chmod +x "$SQ_ROOT/root/Diy/Install.sh" && chroot "$SQ_ROOT" /bin/ash "/root/Diy/Install.sh" 2>&1 && ok "注入完成" || warn "注入脚本返回非0（可忽略）"
 #!/bin/sh
-echo "==> Custom..."; mkdir -p /var/lock && touch /var/lock/opkg.lock
+echo "==> Custom..."; echo "nameserver 223.5.5.5" > /etc/resolv.conf; mkdir -p /var/lock && touch /var/lock/opkg.lock
 case "$(command -v apk || command -v opkg)" in *apk) pm="apk add --allow-untrusted --force-overwrite"; ext="apk" ;; *opkg) pm="opkg install --force-overwrite"; ext="ipk" ;; *) echo "==> System Not Supported"; pm="" ;; esac
 if [ -n "$pm" ] && [ -d "/root/Diy/packages" ];then find "/root/Diy/packages" -type f -name "*.$ext" | xargs ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r pkg; do $pm "$pkg" 2>&1 && rm -f "$pkg"; done; fi
 [ -d "/root/Diy/etc" ] && cp -rf "/root/Diy/etc/." /etc/; echo "==> Done..."; rm -rf "/root/Diy"
