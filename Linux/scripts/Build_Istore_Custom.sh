@@ -73,7 +73,7 @@ dir="/root/Diy"
 Expand="luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-attendedsysupgrade-zh-cn"
 echo "==> Custom..."; echo "nameserver 223.5.5.5" > /etc/resolv.conf; mkdir -p /var/lock && touch /var/lock/opkg.lock
 
-case "$(command -v apk || command -v opkg)" in 
+case "$(command -v apk || command -v opkg)" in
 	*apk) echo "==> Updating apk list..."; sed -i 's_https\?://downloads.openwrt.org_http://mirrors.cernet.edu.cn/openwrt_g' /etc/apk/repositories.d/distfeeds.list 2>/dev/null && apk update || echo "update failed"; pm="apk add --allow-untrusted --force-overwrite"; ext="apk" ;;
 	*opkg) echo "==> Updating opkg list..."; sed -i 's_https\?://downloads.openwrt.org_http://mirrors.cernet.edu.cn/openwrt_g' /etc/opkg/distfeeds.conf 2>/dev/null && opkg update || echo "update failed"; pm="opkg install --force-overwrite"; ext="ipk" ;; *) echo "==> System Not Supported"; pm="" ;;
 esac
