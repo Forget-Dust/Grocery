@@ -66,13 +66,21 @@ unpack(){ SQ_ROOT="$TMPDIR/squashfs-root"; echo "📂 解包..."; rm -rf "$SQ_RO
 # . 注入自定义内容
 # ════════════════════════════════════════════
 inject() {
-    [[ -d "Diy" ]] && { mkdir -p "$SQ_ROOT/root"; cp -rf Diy "$SQ_ROOT/root/Diy"; ok "📦 注入 Diy → /root/Diy"; } || warn "未找到 Diy/ 目录，跳过"
-    cat > "$SQ_ROOT/root/Diy/Install.sh" << 'INEOF' && chmod +x "$SQ_ROOT/root/Diy/Install.sh" && chroot "$SQ_ROOT" /bin/ash "/root/Diy/Install.sh" 2>&1 && ok "注入完成" || warn "注入脚本返回非0（可忽略）"
+    [[ -d "Diy" ]] && { mkdir -p "$SQ_ROOT/root"; cp -rf "Diy" "$SQ_ROOT/root/Diy"; ok "📦 注入 Diy → /root/Diy"; } || { warn "未找到 Diy 目录，跳过"; return 1; }
+    cat > "$SQ_ROOT/root/Diy/Install.sh" <<- 'INEOF' && chmod +x "$SQ_ROOT/root/Diy/Install.sh" && chroot "$SQ_ROOT" "/bin/ash" "/root/Diy/Install.sh" 2>&1 && ok "注入完成" || warn "注入脚本返回非0（可忽略）"
 #!/bin/sh
+dir="/root/Diy"
+Expand="luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-attendedsysupgrade-zh-cn"
 echo "==> Custom..."; echo "nameserver 223.5.5.5" > /etc/resolv.conf; mkdir -p /var/lock && touch /var/lock/opkg.lock
-case "$(command -v apk || command -v opkg)" in *apk) pm="apk add --allow-untrusted --force-overwrite"; ext="apk" ;; *opkg) pm="opkg install --force-overwrite"; ext="ipk" ;; *) echo "==> System Not Supported"; pm="" ;; esac
-if [ -n "$pm" ] && [ -d "/root/Diy/packages" ];then find "/root/Diy/packages" -type f -name "*.$ext" | xargs ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r pkg; do $pm "$pkg" 2>&1 && rm -f "$pkg"; done; fi
-[ -d "/root/Diy/etc" ] && cp -rf "/root/Diy/etc/." /etc/; echo "==> Done..."; rm -rf "/root/Diy"
+
+case "$(command -v apk || command -v opkg)" in 
+	*apk) echo "==> Updating apk list..."; sed -i 's_https\?://downloads.openwrt.org_http://mirrors.cernet.edu.cn/openwrt_g' /etc/apk/repositories.d/distfeeds.list 2>/dev/null && apk update || echo "update failed"; pm="apk add --allow-untrusted --force-overwrite"; ext="apk" ;;
+	*opkg) echo "==> Updating opkg list..."; sed -i 's_https\?://downloads.openwrt.org_http://mirrors.cernet.edu.cn/openwrt_g' /etc/opkg/distfeeds.conf 2>/dev/null && opkg update || echo "update failed"; pm="opkg install --force-overwrite"; ext="ipk" ;; *) echo "==> System Not Supported"; pm="" ;;
+esac
+
+if [ -n "$pm" ] && [ -n "$Expand" ];then echo "==> Install Expand..."; for pkg in $Expand; do $pm "$pkg" 2>&1; done; fi
+if [ -n "$pm" ] && [ -d "$dir/packages" ];then echo "==> Install Packages..."; find "$dir/packages" -type f -name "*.$ext" | xargs ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r pkg; do $pm "$pkg" 2>&1 && rm -f "$pkg"; done; fi
+[ -d "$dir/etc" ] && { echo "==> Copy Config..."; cp -rf "$dir/etc/." /etc/; }; echo "==> Done..."; rm -rf "$dir"
 INEOF
 }
 
@@ -96,7 +104,7 @@ fix_partition_table(){ echo "🛠️  修复分区表..."; case "$PT_TYPE" in gp
 # ════════════════════════════════════════════
 # . 输出最终文件
 # ════════════════════════════════════════════
-finalize(){ local output="istoreos_custom.img"; mv "$NEW_IMG" "$output"; [[ -z "${SKIP_COMPRESS:-}" ]] && { echo "🗜️  压缩..."; rm -f "${output}.gz"; gzip -kf "$output"; output="${output}.gz"; }; echo; ok "完成！ 文件: $output  大小: $(fmt_size "$(stat -c%s "$output")")"; echo "   烧录: dd if=$output bs=4M | gunzip | dd of=/dev/sdX bs=4M conv=fsync"; }
+finalize(){ local output="${IMG_ARG%.img.gz}_custom.img"; mv "$NEW_IMG" "$output"; [[ -z "${SKIP_COMPRESS:-}" ]] && { echo "🗜️  压缩..."; rm -f "${output}.gz"; gzip -kf "$output"; output="${output}.gz"; }; echo; ok "完成！ 文件: $output  大小: $(fmt_size "$(stat -c%s "$output")")"; echo "   烧录: dd if=$output bs=4M | gunzip | dd of=/dev/sdX bs=4M conv=fsync"; }
 
 # ════════════════════════════════════════════
 # . 主流程（按步骤串联）
