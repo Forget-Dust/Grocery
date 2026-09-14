@@ -14,8 +14,9 @@ else
     esac
     if [ -n "$pm" ]; then
         echo "==> Installing packages..."
-        find . -type f \( -name "*$(uname -m)*.$ext" -o -name "luci-*.$ext" -o -name "*.$ext" \) | while read -r pkg; do
-            $pm "$pkg" 2>/dev/null && rm -f "$pkg"
-        done; echo "==> Done"
+        find . -type f -name "*.$ext" | xargs ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r pkg; do $pm "$pkg" 2>&1 && rm -f "$pkg"; done
     fi
 fi
+
+[ -d etc ] && cp -rf etc/. /etc/ && for svc in lucky dockerd; do service $svc enable && service $svc restart; done
+echo "==> Done"

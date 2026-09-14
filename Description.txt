@@ -5,9 +5,10 @@ fnos：
 openwrt：
 	#初始操作：
 	N1_MAC：	F2:F8:EF:25:C6:F9	22:C5:FD:B9:AF:AF
-	pkg="ota|bootstrap|ddns|upnp|linkease|mergerfs|cifs|wol|nfs|appfilter"
-	opkg list-installed | awk '{print $1}' | grep -iE "$pkg" | xargs -r opkg remove --autoremove --force-depends --force-removal-of-dependent-packages
-	#添加I软件源
+	Unpackages="bootstrap|modemmanager|wireguard|ota|appfilter|linkease|ddns|wol|upnp|nfs|mergerfs"
+	apk info 2>/dev/null | grep -iE "$Unpackages" | xargs -r apk del --force --rdepends 2>&1
+	opkg list-installed | awk '{print $1}' | grep -iE "$Unpackages" | xargs -r opkg remove --autoremove --force-depends --force-removal-of-dependent-packages 2>&1
+	#添加软件源
 	sed -i 's/^option check_signature/#option check_signature/' /etc/opkg.conf
 	echo 'src/gz imopenwrt_luci https://downloads.immortalwrt.org/releases/packages-24.10/x86_64/luci' >> /etc/opkg/customfeeds.conf
 	sed -i '/^#/d;/istore\.linkease\.com/d;/istore\.istoreos\.com/d;$a src/gz openwrt_store https://istore.istoreos.com/repo/all/store' /etc/opkg/customfeeds.conf
@@ -32,12 +33,13 @@ armbian：
 	换源：bash <(curl -sfSL "https://linuxmirrors.cn/main.sh")
 	Cns：bash <(curl -sfSL "https://binary.parso.org/builds.sh")
 	Docker：bash <(curl -sfSL "https://linuxmirrors.cn/docker.sh")
+	AcePanel：bash <(curl -sfSL "https://dl.acepanel.net/helper.sh")
 	OpenList：bash <(curl -sfSL "https://res.oplist.org/script/v4.sh")
 	宝塔：bash <(curl -sfSL "https://download.bt.cn/install/install_panel.sh")
 	雷池WAF：bash <(curl -sfSL "https://waf-ce.chaitin.cn/release/latest/manager.sh")
 	1Panel：bash <(curl -sfSL "https://resource.fit2cloud.com/1panel/package/quick_start.sh")
-	Lucky：bash <(curl -sfSL "https://release.66666.host/install.sh") "https://release.66666.host"
 	3X-UI：bash <(curl -sfSL "https://raw.githubusercontent.com/GH6324/3xui-cn/main/install.sh")
+	Lucky：bash <(curl -sfSL "https://release.66666.host/install.sh") "https://release.66666.host"
 	LinuxEnvConfig：bash <(curl -sfSL "https://gitee.com/yijingsec/LinuxEnvConfig/raw/master/install.sh")
 	灯塔ARL：bash <(curl -sfSL "https://raw.githubusercontent.com/Aabyss-Team/ARL/master/misc/setup-arl.sh")
 	PVE-Tools：bash <(curl -sfSL "https://raw.githubusercontent.com/PVE-Tools/PVE-Tools-9/main/PVE-Tools.sh")
