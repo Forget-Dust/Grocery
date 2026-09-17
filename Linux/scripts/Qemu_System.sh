@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+ping -c 1 -w 3 223.5.5.5 >/dev/null 2>&1 || { echo "====>Network Exception, Please Check The Network And Try Again!"; exit 1; }
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 cd -- "$SCRIPT_DIR" || (echo "ERROR: 无法 cd 到脚本目录: $SCRIPT_DIR" >&2 && exit 1)

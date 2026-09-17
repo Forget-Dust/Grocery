@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+ping -c 1 -w 3 223.5.5.5 >/dev/null 2>&1 || { echo "====>Network Exception, Please Check The Network And Try Again!"; exit 1; }
 
 # ════════════════════════════════════════════
 # 基础工具函数（颜色、日志、数值校验）
@@ -69,12 +70,12 @@ check_mount_clean(){ local r="${SQ_ROOT:-}"; [[ -z "$r" ]] && return 0; if [[ -n
 # . 注入自定义内容
 # ════════════════════════════════════════════
 inject(){
-    apt-get install -y qemu-user-static >/dev/null 2>&1
+    (apt-get update; apt-get install -y qemu-user-static)>/dev/null 2>&1
     [[ -d "Diy" ]] && { mkdir -p "$SQ_ROOT/root"; cp -rf "Diy" "$SQ_ROOT/root/Diy"; ok "📦 注入 Diy → /root/Diy"; } || { warn "未找到 Diy 目录，跳过"; return 1; }
     mount_vfs; cat > "$SQ_ROOT/root/Diy/Install.sh" <<-'INEOF' && chmod +x "$SQ_ROOT/root/Diy/Install.sh" && { chroot "$SQ_ROOT" "/bin/ash" "/root/Diy/Install.sh" 2>&1 && ok "注入完成" || warn "注入脚本返回非0（可忽略）"; } #&& read -p "断点"
 #!/bin/sh
 dir="/root/Diy"
-Unpackages="bootstrap|modemmanager|wireguard|ota|filetransfer|appfilter|linkease|ddns|wol|upnp|nfs|mergerfs"
+Unpackages="modemmanager|wireguard|ota|filetransfer|appfilter|linkease|ddns|wol|upnp|nfs|mergerfs"
 #Inpackages="luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-attendedsysupgrade-zh-cn luci-i18n-dockerman-zh-cn"
 
 echo "==> Custom..."; echo "nameserver 223.5.5.5" > /etc/resolv.conf; mkdir -p /var/lock && touch /var/lock/opkg.lock
