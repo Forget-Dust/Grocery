@@ -1,19 +1,14 @@
 #!/bin/bash
-set -euo pipefail
-ping -c 1 -w 3 223.5.5.5 >/dev/null 2>&1 || { echo "====>Network Exception, Please Check The Network And Try Again!"; exit 1; }
+#set -euo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-cd -- "$SCRIPT_DIR" || (echo "ERROR: 无法 cd 到脚本目录: $SCRIPT_DIR" >&2 && exit 1)
-
-Data="Data.qcow2"
 Arch="$(uname -m)"
-System="System_$Arch.qcow2"
+System="System_$Arch.qcow2" ;Data="Data.qcow2"
 Img=$(find . -type f -name '*.img' | xargs -r file | grep "boot sector" | cut -d ":" -f1 | head -1)
 Packages=$([ "$Arch" = "x86_64" ] && echo "qemu-system-x86 ovmf ipxe-qemu qemu-utils" || echo "qemu-system-arm qemu-efi-aarch64 ipxe-qemu qemu-utils")
-declare -a Uefi='-drive if=pflash,format=raw,readonly=on,unit=0,file="/usr/share/OVMF/OVMF_CODE_4M.fd" -drive if=pflash,format=raw,readonly=on,unit=1,file="/usr/share/OVMF/OVMF_VARS_4M.fd"'
+Uefi=(-drive if=pflash,format=raw,readonly=on,unit=0,file="/usr/share/OVMF/OVMF_CODE_4M.fd" -drive if=pflash,format=raw,readonly=on,unit=1,file="/usr/share/OVMF/OVMF_VARS_4M.fd")
 
-for pkg in $Packages ;do apt-get install -fy "$pkg" >/dev/null 2>&1;done
-[[ -f "$Data" ]] || qemu-img create -f qcow2 "$Data" 70G
+(apt update ;for pkg in $Packages ;do apt install -fy "$pkg" ;done)
+cd $(pwd -P) ;[[ -f "$Data" ]] || qemu-img create -f qcow2 "$Data" 70G
 [[ -f "$System" ]] || ([[ -f "$Img" ]] && (qemu-img convert -p -f raw -O qcow2 "$Img" "$System" && qemu-img resize "$System" +2G && rm -rf "$Img") || (echo "System file does not exist" && exit 1))
 
 TAP=tap0; BR=br0; UPLINK=eth0

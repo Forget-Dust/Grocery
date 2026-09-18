@@ -13,6 +13,28 @@ services:
     volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
     environment: {TZ: Asia/Shanghai, WATCHTOWER_SCHEDULE: "0 0 6 * * *"}
 
+# OpenList
+  "openlist":
+    user: "0:0"
+    ports: ["5244:5244"]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: openlist
+    environment: {TZ: Asia/Shanghai}
+    image: openlistteam/openlist:latest-lite-aio
+    volumes: ["./data:/overlay","./data/openlist:/opt/openlist/data"]
+
+# Lucky
+  "lucky":
+    profiles: [disabled]
+    container_name: lucky
+    ports: ["8012:16601"]
+    networks: [diy_bridge]
+    image: gdy666/lucky:v2
+    restart: unless-stopped
+    environment: {TZ: Asia/Shanghai}
+    volumes: ["./data/lucky:/goodluck/data"]
+
 # 1Panel
   "1panel":
     restart: always
@@ -35,40 +57,18 @@ services:
     environment: {TZ: Asia/Shanghai}
     volumes: ["./data/dpanel:/dpanel","/var/run/docker.sock:/var/run/docker.sock"]
 
-# OpenList
-  "openlist":
-    user: "0:0"
-    ports: ["8010:5244"]
-    networks: [diy_bridge]
-    restart: unless-stopped
-    container_name: openlist
-    environment: {TZ: Asia/Shanghai}
-    image: openlistteam/openlist:latest-lite-aio
-    volumes: ["./data:/overlay/local_disk","./data/openlist:/opt/openlist/data"]
-
 # 联通Token
   "token":
     profiles: [disabled]
-    ports: ["8011:5702"]
+    ports: ["8010:5702"]
     container_name: token
     networks: [diy_bridge]
     restart: unless-stopped
     image: twh808/unicom-login:latest
 
-# Lucky
-  "lucky":
-    profiles: [disabled]
-    container_name: lucky
-    ports: ["8012:16601"]
-    networks: [diy_bridge]
-    image: gdy666/lucky:v2
-    restart: unless-stopped
-    environment: {TZ: Asia/Shanghai}
-    volumes: ["./data/lucky:/goodluck/data"]
-
 # 青龙面板
   "qinglong":
-    ports: ["8013:5700"]
+    ports: ["8011:5700"]
     profiles: [disabled]
     networks: [diy_bridge]
     restart: unless-stopped
@@ -79,7 +79,7 @@ services:
   
 # 呆呆面板
   "ddpanel":
-    ports: ["8014:5700"]
+    ports: ["8012:5700"]
     profiles: [disabled]
     networks: [diy_bridge]
     container_name: ddpanel
@@ -96,7 +96,7 @@ services:
     container_name: adguardhome
     environment: {TZ: Asia/Shanghai}
     image: adguard/adguardhome:latest
-    ports: ["8015:3000","153:53","853:853"]
+    ports: ["8013:3000","153:53","853:853"]
     volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
 
 # Apt-Linux

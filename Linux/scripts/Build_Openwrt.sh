@@ -1,6 +1,5 @@
 #!/bin/bash
-set -euo pipefail
-ping -c 1 -w 3 223.5.5.5 >/dev/null 2>&1 || { echo "====>Network Exception, Please Check The Network And Try Again!"; exit 1; }
+#set -euo pipefail
 
 # ════════════════════════════════════════════
 # · 变量设置
