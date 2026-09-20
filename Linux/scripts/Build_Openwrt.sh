@@ -2,36 +2,16 @@
 #set -euo pipefail
 
 # ════════════════════════════════════════════
-# · 变量设置
-# ════════════════════════════════════════════
-Version="25"
-Work_Dir=$(pwd)
-PROFILE="generic" #(generic)
-Target="x86/64" #(x86/64|armsr/armv8)
-Releases_Url="https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases"
-Download="aria2c -c -R -x 16 -s 999 -j 20 --file-allocation=none --check-certificate=false"
-Version=$(curl -sfSL "${Releases_Url}" | grep -oP 'href="\K\d+\.\d+\.\d+' | grep -E "${Version}" | sort -V |tail -1)
-Imagebuilder=$(curl -sfSL "${Releases_Url}/${Version}/targets/${Target}" | grep -oP 'href="\Kopenwrt-imagebuilder[^"]+\.tar\.zst')
-Packages=(build-essential file libncurses-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python3 zstd aria2)
-Online_Packages=(luci luci-ssl luci-compat luci-i18n-base-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-dockerman-zh-cn)
-
-# ════════════════════════════════════════════
 # · 构建固件
 # ════════════════════════════════════════════
-Install_Packages() {
-	echo -e "====》Install Packages..."
-	apt update; apt install -fy ${Packages[@]}
-}
-
 Download_Imagebuilder() {
 	echo -e "====》Download Imagebuilder..."
-	${Download} ${Releases_Url}/${Version}/targets/${Target}/${Imagebuilder}
+	cd "${Work_Dir}"; ${Download} ${Releases_Url}/${Version}/targets/${Target}/${Imagebuilder}
 }
 
 Unpack_Imagebuilder() {
 	echo -e "====》Unpack Imagebuilder..."
-	rm -rf ${Imagebuilder%.tar.zst}; tar -axf ${Imagebuilder}
-	cd ${Imagebuilder%.tar.zst} || { echo "Directory not found"; exit 1; }
+	rm -rf ${Imagebuilder%.tar.zst}; tar -axf ${Imagebuilder}; cd ${Imagebuilder%.tar.zst} || { echo "Directory not found"; exit 1; }
 }
 
 Dynamic_Custom() {
@@ -54,14 +34,27 @@ EOF
 
 Build_Image() {
 	echo -e "====》Start Imagebuilder"
-	sed -i 's|downloads.openwrt.org|mirrors.tuna.tsinghua.edu.cn/openwrt|g' repositories
-	make image FILES="files" BIN_DIR="${Work_Dir}/out/" PROFILE="${PROFILE}" PACKAGES="${Online_Packages[*]}" ROOTFS_PARTSIZE=512
+	sed -i 's|downloads.openwrt.org|mirrors.tuna.tsinghua.edu.cn/openwrt|g' repositories*
+	make image ROOTFS_PARTSIZE=512 FILES="files" BIN_DIR="${Work_Dir}/out/" PACKAGES="${Online_Packages[*]}"
 }
 
 Build() {
-	echo -e "====》Start Build OpenWrt Image..."
-	Install_Packages; Download_Imagebuilder; Unpack_Imagebuilder; Dynamic_Custom; Build_Image
+	Work_Dir=$(pwd)
+	Versions=(24 25)
+	Targets=(x86/64 armsr/armv8)
+	Releases_Url="https://mirrors.tuna.tsinghua.edu.cn/openwrt/releases"
+	Download="aria2c -c -R -x 16 -s 999 -j 20 --max-tries=3 --retry-wait=5 --file-allocation=none --check-certificate=false"
+	Packages=(build-essential file libncurses-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python3 zstd aria2)
+	Online_Packages=(luci luci-ssl luci-compat luci-i18n-base-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-dockerman-zh-cn)
+
+	echo -e "====》Install Packages..."; apt update; apt install -fy ${Packages[@]}
+	for ver in "${Versions[@]}"; do for Target in "${Targets[@]}"; do
+	Version=$(curl -sfSL "${Releases_Url}" | grep -oP 'href="\K\d+\.\d+\.\d+' | grep -E "^${ver}" | sort -V |tail -1)
+	Imagebuilder=$(curl -sfSL "${Releases_Url}/${Version}/targets/${Target}" | grep -oP 'href="\Kopenwrt-imagebuilder[^"]+\.tar\.zst')
+	[[ -z "${Version}" || -z "${Imagebuilder}" ]] && { echo "解析失败: ver=${ver} target=${Target}"; exit 1; }
+	echo -e "====》Start Build OpenWrt Image..."; Download_Imagebuilder; Unpack_Imagebuilder; Dynamic_Custom; Build_Image
 	echo -e "====》Build Completed!"; rm -rf ${Work_Dir}/${Imagebuilder%.tar.zst}
+	done; done
 }
 
 Build
