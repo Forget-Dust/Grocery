@@ -58,6 +58,7 @@ jobs:
           RUN="$INTERP"
           if [ -z "$RUN" ]; then
             case "$(basename "$EP")" in
+              *.sh) RUN=bash ;;
               *.py) RUN=python3 ;;
               *.pl) RUN=perl ;;
               *.rb) RUN=ruby ;;
