@@ -1,28 +1,48 @@
 {
-  "name": "LibreTV 公开聚合源",
+  "name": "LibreTV 整合源（公开聚合 + 联网补充，自用维护）",
   "version": 2,
   "sources": [
-    { "name": "黑木耳影视", "url": "https://json.heimuer.xyz/api.php/provide/vod", "detail": "https://heimuer.tv" },
+    { "name": "360", "url": "https://360zy.com/api.php/provide/vod/" },
+    { "name": "红牛", "url": "https://www.hongniuzy2.com/api.php/provide/vod/" },
+    { "name": "量子", "url": "https://cj.lziapi.com/api.php/provide/vod/" },
+    { "name": "卧龙", "url": "https://collect.wolongzyw.com/api.php/provide/vod/" },
+    { "name": "新浪", "url": "https://api.xinlangapi.com/xinlangapi.php/provide/vod/" },
+    { "name": "奥斯卡资源网", "url": "https://aosikazy.com/api.php/provide/vod" },
+    { "name": "光速资源", "url": "https://api.guangsuapi.com/api.php/provide/vod/from/gsm3u8" },
+    { "name": "金鹰资源", "url": "https://jyzyapi.com/provide/vod/from/jinyingm3u8" },
+    { "name": "虎牙", "url": "https://www.huyaapi.com/api.php/provide/vod/" },
+    { "name": "苏尼", "url": "https://suoniapi.com/api.php/provide/vod/" },
+    { "name": "火狐/豪华", "url": "https://hhzyapi.com/api.php/provide/vod" },
+    { "name": "悟空资源", "url": "https://api.wujinapi.com/api.php/provide/vod/" },
     { "name": "非凡影视", "url": "http://ffzy5.tv/api.php/provide/vod", "detail": "http://ffzy5.tv" },
     { "name": "天涯资源", "url": "https://tyyszy.com/api.php/provide/vod" },
-    { "name": "如意资源", "url": "https://cj.rycjapi.com/api.php/provide/vod" },
     { "name": "暴风资源", "url": "https://bfzyapi.com/api.php/provide/vod" },
     { "name": "电影天堂资源", "url": "http://caiji.dyttzyapi.com/api.php/provide/vod", "detail": "http://caiji.dyttzyapi.com" },
-    { "name": "360资源", "url": "https://360zy.com/api.php/provide/vod" },
-    { "name": "卧龙资源", "url": "https://wolongzyw.com/api.php/provide/vod" },
+    { "name": "卧龙资源", "url": "https://wolongzyw.com/api.php/provide/vod/" },
     { "name": "极速资源", "url": "https://jszyapi.com/api.php/provide/vod" },
-    { "name": "豆瓣资源", "url": "https://dbzy.com/api.php/provide/vod" }
+
+    { "name": "闪电资源", "url": "http://sdzyapi.com/api.php/provide/vod/" },
+    { "name": "樱花资源", "url": "https://m3u8.apiyhzy.com/api.php/provide/vod/" },
+    { "name": "百度云资源", "url": "https://api.apibdzy.com/api.php/provide/vod/" },
+    { "name": "飘零资源", "url": "https://p2100.net/api.php/provide/vod/" },
+    { "name": "速博资源", "url": "https://subocaiji.com/api.php/provide/vod/" },
+    { "name": "魔都资源", "url": "https://caiji.moduapi.cc/api.php/provide/vod/" },
+    { "name": "最大资源", "url": "http://zuidazy.me/api.php/provide/vod/" },
+    { "name": "360资源zz", "url": "https://360zyzz.com/api.php/provide/vod" },
+    { "name": "ck资源", "url": "https://ckzy.me/api.php/provide/vod/" },
+
+    { "name": "海外看", "url": "https://haiwaikan.com/api.php/provide/vod/" },
+    { "name": "四九", "url": "https://49zyw.com/api.php/provide/vod/" },
+    { "name": "丝袜资源", "url": "https://siwazyw.cc/api.php/provide/vod" },
+    { "name": "业余", "url": "https://yyff.540734621.xyz/api.php/provide/vod/" },
+    { "name": "探探资源", "url": "https://apittzy.com/api.php/provide/vod" },
+    { "name": "优质资源库", "url": "https://api.1080zyku.com/inc/api.php/provide/vod" },
+    { "name": "快手采集", "url": "https://caiji.kczyapi.com/api.php/provide/vod/from/kcm3u8/" },
+    { "name": "如意资源", "url": "https://cj.rycjapi.com/api.php/provide/vod" }
   ],
   "liveSources": [
-    {
-      "name": "IPTV-Org 中国",
-      "url": "https://iptv-org.github.io/iptv/countries/cn.m3u",
-      "epg": "https://iptv-org.github.io/epg.xml.gz"
-    },
-    {
-      "name": "IPTV-Org 全球",
-      "url": "https://iptv-org.github.io/iptv/index.m3u",
-      "epg": "https://iptv-org.github.io/epg.xml.gz"
-    }
+    { "name": "IPTV-Org 中国", "url": "https://iptv-org.github.io/iptv/countries/cn.m3u", "epg": "https://iptv-org.github.io/epg.xml.gz" },
+    { "name": "IPTV-Org 全球", "url": "https://iptv-org.github.io/iptv/index.m3u", "epg": "https://iptv-org.github.io/epg.xml.gz" },
+    { "name": "IPTV-Org 中文", "url": "https://iptv-org.github.io/iptv/languages/chi.m3u", "epg": "https://iptv-org.github.io/epg.xml.gz" }
   ]
 }
