@@ -89,7 +89,7 @@ esac
 
 [ -n "$install" ] && [ -n "$Inpackages" ] && { echo "==> Install Online_Packages..."; for pkg in $Inpackages; do $install --force-overwrite "$pkg" 2>/dev/null; done; }
 [ -n "$install" ] && [ -d "$dir/packages" ] && { echo "==> Install Offline_Packages..."; find "$dir/packages" -type f -name "*.$ext" | xargs -r ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r pkg; do $install "$pkg" 2>/dev/null && rm -f "$pkg"; done; }
-[ -d "$dir/etc" ] && { echo "==> Copy Config..."; cp -rf "$dir/etc/." /etc/; }; echo "==> Done..."; rm -rf "$dir"; : > /etc/resolv.conf
+[ -d "$dir/etc" ] && { echo "==> Copy Config..."; cp -rf "$dir/etc/." /etc/;ln -s /etc/lucky /etc/lucky.daji; }; echo "==> Done..."; rm -rf "$dir"; : > /etc/resolv.conf
 INEOF
 }
 

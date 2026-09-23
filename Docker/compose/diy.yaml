@@ -16,9 +16,9 @@ services:
 # OpenList
   "openlist":
     user: "0:0"
+    restart: always
     ports: ["5244:5244"]
     networks: [diy_bridge]
-    restart: unless-stopped
     container_name: openlist
     environment: {TZ: Asia/Shanghai}
     image: openlistteam/openlist:latest-lite-aio
@@ -26,36 +26,36 @@ services:
 
 # Lucky
   "lucky":
-    profiles: [disabled]
-    container_name: lucky
-    ports: ["8012:16601"]
-    networks: [diy_bridge]
-    image: gdy666/lucky:v2
-    restart: unless-stopped
-    environment: {TZ: Asia/Shanghai}
-    volumes: ["./data/lucky:/goodluck/data"]
-
-# 1Panel
-  "1panel":
     restart: always
     profiles: [disabled]
-    ports: ["8000:10086"]
+    container_name: lucky
+    ports: ["16601:16601"]
     networks: [diy_bridge]
-    container_name: 1panel
-    image: moelin/1panel:latest
-    environment: {TZ: Asia/Shanghai,BASE_DIR: /opt,ENTRANCE: 1panel}
-    volumes: ["./data/1panel:/opt","/var/run/docker.sock:/var/run/docker.sock"]
+    image: gdy666/lucky:v2
+    environment: {TZ: Asia/Shanghai}
+    volumes: ["./data/lucky:/goodluck/data"]
 
 # Dpanel
   "dpanel":
     restart: always
-    ports: ["8001:8080"]
     profiles: [disabled]
+    ports: ["8000:8080"]
     networks: [diy_bridge]
     container_name: dpanel
     image: dpanel/dpanel:lite
     environment: {TZ: Asia/Shanghai}
     volumes: ["./data/dpanel:/dpanel","/var/run/docker.sock:/var/run/docker.sock"]
+
+# 1Panel
+  "1panel":
+    restart: always
+    profiles: [disabled]
+    ports: ["8001:10086"]
+    networks: [diy_bridge]
+    container_name: 1panel
+    image: moelin/1panel:latest
+    environment: {TZ: Asia/Shanghai,BASE_DIR: /opt,ENTRANCE: 1panel}
+    volumes: ["./data/1panel:/opt/1panel","/var/run/docker.sock:/var/run/docker.sock"]
 
 # 联通Token
   "token":
@@ -68,25 +68,36 @@ services:
 
 # 青龙面板
   "qinglong":
-    ports: ["8011:5700"]
     profiles: [disabled]
+    ports: ["8011:5700"]
     networks: [diy_bridge]
     restart: unless-stopped
     container_name: qinglong
     image: whyour/qinglong:latest
     environment: {TZ: Asia/Shanghai}
     volumes: ["./data/qinglong:/ql/data"]
-  
+
 # 呆呆面板
   "ddpanel":
-    ports: ["8012:5700"]
     profiles: [disabled]
+    ports: ["8012:5700"]
     networks: [diy_bridge]
     container_name: ddpanel
     restart: unless-stopped
     environment: {TZ: Asia/Shanghai}
     image: linzixuanzz/daidai-panel:latest
     volumes: ["./data/Dumb-Panel:/app/Dumb-Panel"]
+
+# lxserver
+  "lxserver":
+    ports: ["8013:9527"]
+    profiles: [disabled]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: lxserver
+    image: ghcr.io/xcq0607/lxserver:latest
+    environment: {TZ: Asia/Shanghai,FRONTEND_PASSWORD: "lxserver"}
+    volumes: ["./data/lxserver/data:/server/data","./data/lxserver/logs:/server/logs"]
 
 # AdGuardHome
   "adguardhome":
@@ -96,14 +107,24 @@ services:
     container_name: adguardhome
     environment: {TZ: Asia/Shanghai}
     image: adguard/adguardhome:latest
-    ports: ["8013:3000","153:53","853:853"]
+    ports: ["8014:3000","153:53","853:853"]
     volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
+
+# LibreTV
+  "libretv":
+    ports: ["8015:8080"]
+    profiles: [disabled]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: libretv
+    image: ghcr.io/librespark/libretv:latest
+    environment: {TZ: "Asia/Shanghai",PASSWORD: "libretv",DEFAULT_SUBSCRIPTIONS: '["https://raw.githubusercontent.com/Forget-Dust/Grocery/main/Docker/Files/libretv.json"]'}
 
 # Apt-Linux
   "aptlinux":
-    restart: always
     profiles: [disabled]
     networks: [diy_bridge]
+    restart: unless-stopped
     container_name: aptlinux
     image: library/debian:12
     environment: {TZ: Asia/Shanghai}
@@ -111,9 +132,9 @@ services:
 
 # Yum-Linux
   "yumlinux":
-    restart: always
     profiles: [disabled]
     networks: [diy_bridge]
+    restart: unless-stopped
     container_name: yumlinux
     image: library/rockylinux:9
     environment: {TZ: Asia/Shanghai}
