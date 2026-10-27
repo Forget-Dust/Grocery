@@ -1,0 +1,102 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      script:      { required: true }
+      interpreter: { required: false, default: '' }
+      sudo:        { required: false, default: 'auto' }
+      allow_overwrite: { type: boolean, default: true }
+      release:     { type: boolean, default: true }
+
+permissions: { contents: write }
+
+concurrency:
+  group: build-release-${{ inputs.script }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ !startsWith(inputs.script, 'http') }}
+
+      - name: Prepare
+        id: p
+        env:
+          SCRIPT: ${{ inputs.script }}
+        run: |
+          set -euo pipefail
+          if [[ "$SCRIPT" == http* ]]; then
+            curl -fsSL "$SCRIPT" -o /tmp/src
+            rm -rf vendor && mkdir vendor
+            mime=$(file -b --mime-type /tmp/src); bname=$(basename "$SCRIPT")
+            if [[ "$bname" == *.zip ]] || [[ "$mime" == "application/zip" ]]; then unzip -qo /tmp/src -d vendor
+            elif [[ "$bname" == *.tar.* || "$bname" == *.tgz || "$mime" == application/x-tar* || "$mime" == application/gzip ]]; then tar -xf /tmp/src -C vendor --no-same-owner
+            else cp /tmp/src "vendor/$bname"; fi
+            EP=""; for pat in build.sh build.py build.pl build.rb build.js build; do EP=$(find vendor -type f -name "$pat" | head -1); [ -n "$EP" ] && break; done
+            [ -n "$EP" ] || { echo "::error::未找到入口脚本"; exit 1; }
+          else EP="$SCRIPT"; fi
+          [ -f "$EP" ] || { echo "::error::脚本不存在: $EP"; exit 1; }
+          chmod +x "$EP"
+          echo "entry=$EP" >> "$GITHUB_OUTPUT"
+          raw=$(basename "$EP" | sed 's/\.[^.]*$//' | tr -c '[:alnum:]._-' '-'); hash=$(printf '%s' "$SCRIPT" | sha256sum | cut -c1-8)
+          echo "tag=${raw}-${hash}" >> "$GITHUB_OUTPUT"
+          echo "out=$(cd "$(dirname "$EP")" && pwd)/out" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          EP:            ${{ steps.p.outputs.entry }}
+          INTERP:        ${{ inputs.interpreter }}
+          SUDO_MODE:     ${{ inputs.sudo }}
+          BUILD_OUT_DIR: ${{ steps.p.outputs.out }}
+        run: |
+          set -euo pipefail
+          cd "$(dirname "$EP")" && export PATH="$PWD:$PATH" && export BUILD_OUT_DIR && mkdir -p "$BUILD_OUT_DIR"
+          RUN="$INTERP"
+          if [ -z "$RUN" ]; then
+            case "$(basename "$EP")" in
+              *.sh) RUN=bash ;;
+              *.py) RUN=python3 ;;
+              *.pl) RUN=perl ;;
+              *.rb) RUN=ruby ;;
+              *.js) RUN=node ;;
+              *)
+                sheb=$(head -1 "$EP" 2>/dev/null); if [[ "$sheb" == \#!* ]]; then interp=$(printf '%s' "$sheb" | sed 's@^#![[:space:]]*@@')
+                if [[ "$interp" == env* ]]; then RUN=$(printf '%s' "$interp" | awk '{print $2}'); else RUN=$(basename "$(printf '%s' "$interp" | awk '{print $1}')"); fi; fi
+                [ -z "$RUN" ] && RUN=bash
+                ;;
+            esac
+          fi
+          case "$SUDO_MODE" in
+            true|yes|1) SUDO=sudo --preserve-env=BUILD_OUT_DIR,PATH ;;
+            auto) grep -qE '\b(apt|dpkg|dnf|yum|pacman)\b' "$EP" 2>/dev/null && SUDO=sudo --preserve-env=BUILD_OUT_DIR,PATH || SUDO= ;;
+            *) SUDO= ;;
+          esac
+          echo "▶ ${SUDO:+$SUDO }$RUN $(basename "$EP")"
+          ${SUDO:-} "$RUN" "$(basename "$EP")"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: out
+          path: ${{ steps.p.outputs.out }}/**/*
+          if-no-files-found: error
+
+      - name: Clean
+        if: ${{ inputs.allow_overwrite }}
+        env:
+          TAG:      ${{ steps.p.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: git push --delete origin "$TAG" 2>/dev/null || true && gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Release
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:    ${{ steps.p.outputs.tag }}
+          name:        ${{ steps.p.outputs.tag }}
+          files:       ${{ steps.p.outputs.out }}/**/*
+          make_latest: true

@@ -1,0 +1,115 @@
+networks:
+  "diy_bridge":
+    driver: bridge
+    name: diy_bridge
+  lan-ipvlan:
+    driver: ipvlan
+    driver_opts: {parent: eth0, ipvlan_mode: l2}
+    ipam: {config: [{subnet: 192.168.2.0/24, gateway: 192.168.2.1}]}
+
+services:
+# watchtower
+  "watchtower":
+    restart: always
+    networks: [diy_bridge]
+    container_name: watchtower
+    image: nickfedor/watchtower:latest
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+    environment: {tz: asia/shanghai,watchtower_cleanup: "true",watchtower_schedule: "0 0 6 * * *"}
+
+# openlist
+  "openlist":
+    user: "0:0"
+    restart: always
+    ports: ["5244:5244"]
+    networks: [diy_bridge]
+    container_name: openlist
+    environment: {tz: asia/shanghai}
+    image: openlistteam/openlist:latest
+    volumes: ["./data:/overlay","./data/openlist:/opt/openlist/data"]
+
+# lucky
+  "lucky":
+    restart: always
+    profiles: [disabled]
+    container_name: lucky
+    ports: ["16601:16601"]
+    networks: [diy_bridge]
+    image: gdy666/lucky:latest
+    environment: {tz: asia/shanghai}
+    volumes: ["./data/lucky:/goodluck/data"]
+    #networks: {lan-ipvlan: {ipv4_address: 192.168.1.201}}
+
+# 1panel
+  "1panel":
+    restart: always
+    profiles: [disabled]
+    ports: ["8000:10086"]
+    networks: [diy_bridge]
+    container_name: 1panel
+    image: moelin/1panel:latest
+    environment: {tz: asia/shanghai,base_dir: /opt,entrance: 1panel}
+    volumes: ["./data/1panel:/opt/1panel","/var/run/docker.sock:/var/run/docker.sock"]
+
+# 联通token
+  "token":
+    profiles: [disabled]
+    ports: ["8010:5702"]
+    container_name: token
+    networks: [diy_bridge]
+    restart: unless-stopped
+    environment: {tz: asia/shanghai}
+    image: twh808/unicom-login:latest
+
+# 青龙面板
+  "qinglong":
+    profiles: [disabled]
+    ports: ["8011:5700"]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: qinglong
+    image: whyour/qinglong:latest
+    environment: {tz: asia/shanghai}
+    volumes: ["./data/qinglong:/ql/data"]
+
+# 呆呆面板
+  "ddpanel":
+    profiles: [disabled]
+    ports: ["8012:5700"]
+    networks: [diy_bridge]
+    container_name: ddpanel
+    restart: unless-stopped
+    environment: {tz: asia/shanghai}
+    image: linzixuanzz/daidai-panel:latest
+    volumes: ["./data/dumb-panel:/app/dumb-panel"]
+
+# adguardhome
+  "adguardhome":
+    profiles: [disabled]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: adguardhome
+    environment: {tz: asia/shanghai}
+    image: adguard/adguardhome:latest
+    ports: ["8013:3000","153:53","853:853"]
+    volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
+
+# apt-linux
+  "aptlinux":
+    profiles: [disabled]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: aptlinux
+    image: library/debian:12
+    environment: {tz: asia/shanghai}
+    entrypoint: ["/bin/bash", "-c", "set -e;m=/var/cache/.mirror_done;if [ ! -f \"$$m\" ];then (command -v curl &>/dev/null || (apt-get update && apt-get install -y curl));bash <(curl -sfsl https://gitee.com/supermanito/linuxmirrors/raw/main/changemirrors.sh) --source mirrors.tencent.com --protocol http --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$m\";fi;exec tail -f /dev/null"]
+
+# yum-linux
+  "yumlinux":
+    profiles: [disabled]
+    networks: [diy_bridge]
+    restart: unless-stopped
+    container_name: yumlinux
+    image: library/rockylinux:9
+    environment: {tz: asia/shanghai}
+    entrypoint: ["/bin/bash", "-c", "set -e;m=/var/cache/.mirror_done;if [ ! -f \"$$m\" ];then (command -v curl &>/dev/null || yum install -y curl);bash <(curl -sfsl https://gitee.com/supermanito/linuxmirrors/raw/main/changemirrors.sh) --source mirrors.tencent.com --protocol http --use-intranet-source false --install-epel true --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$m\";fi;exec tail -f /dev/null"]
