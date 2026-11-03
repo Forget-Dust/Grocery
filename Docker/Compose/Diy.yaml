@@ -2,10 +2,8 @@ networks:
   "diy_bridge":
     driver: bridge
     name: diy_bridge
-  lan-ipvlan:
-    driver: ipvlan
-    driver_opts: {parent: eth0, ipvlan_mode: l2}
-    ipam: {config: [{subnet: 192.168.2.0/24, gateway: 192.168.2.1}]}
+    enable_ipv6: true
+    ipam: {config: [{subnet: "fd00:1::/64"}]}
 
 services:
 # watchtower
@@ -13,7 +11,7 @@ services:
     restart: always
     networks: [diy_bridge]
     container_name: watchtower
-    image: nickfedor/watchtower:latest
+    image: containrrr/watchtower:latest
     volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
     environment: {TZ: asia/shanghai,WATCHTOWER_CLEANUP: "true",WATCHTOWER_SCHEDULE: "0 0 6 * * *"}
 
@@ -38,7 +36,6 @@ services:
     image: gdy666/lucky:latest
     environment: {TZ: asia/shanghai}
     volumes: ["./data/lucky:/goodluck/data"]
-    #networks: {lan-ipvlan: {ipv4_address: 192.168.1.201}}
 
 # 1panel
   "1panel":
