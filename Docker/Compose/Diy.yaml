@@ -20,7 +20,7 @@ services:
     network_mode: host
     container_name: openlist
     environment: {TZ: Asia/Shanghai}
-    image: docker.1ms.run/openlistteam/openlist:latest
+    image: docker.1ms.run/openlistteam/openlist:latest-aio
     volumes: ["./data:/overlay","./data/openlist:/opt/openlist/data"]
 
 # lucky(16601)
@@ -30,7 +30,7 @@ services:
     profiles: [disabled]
     container_name: lucky
     environment: {TZ: Asia/Shanghai}
-    image: docker.1ms.run/gdy666/lucky:latest
+    image: docker.1ms.run/gdy666/lucky:v2
     volumes: ["./data/lucky:/goodluck","/var/run/docker.sock:/var/run/docker.sock"]
 
 # gately(16680)
