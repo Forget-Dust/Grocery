@@ -11,7 +11,7 @@ services:
     restart: always
     networks: [diy_bridge]
     container_name: watchtower
-    image: nickfedor/watchtower:latest
+    image: docker.1ms.run/nickfedor/watchtower:latest
     volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
     environment: {TZ: asia/shanghai,WATCHTOWER_CLEANUP: "true",WATCHTOWER_SCHEDULE: "0 0 6 * * *"}
 
@@ -23,7 +23,7 @@ services:
     networks: [diy_bridge]
     container_name: openlist
     environment: {TZ: asia/shanghai}
-    image: openlistteam/openlist:latest
+    image: docker.1ms.run/openlistteam/openlist:latest
     volumes: ["./data:/overlay","./data/openlist:/opt/openlist/data"]
 
 # lucky
@@ -33,9 +33,20 @@ services:
     container_name: lucky
     ports: ["16601:16601"]
     networks: [diy_bridge]
-    image: gdy666/lucky:latest
     environment: {TZ: asia/shanghai}
-    volumes: ["./data/lucky:/goodluck/data"]
+    image: docker.1ms.run/gdy666/lucky:latest
+    volumes: ["./data/lucky:/goodluck/data","/var/run/docker.sock:/var/run/docker.sock"]
+
+# gately
+  "gately":
+    restart: always
+    profiles: [disabled]
+    container_name: gately
+    ports: ["16680:16680"]
+    networks: [diy_bridge]
+    environment: {TZ: asia/shanghai}
+    image: docker.1ms.run/vanjayak/gately:latest
+    volumes: ["./data/gately:/etc/gately","/var/run/docker.sock:/var/run/docker.sock"]
 
 # 1panel
   "1panel":
@@ -44,7 +55,7 @@ services:
     ports: ["8000:10086"]
     networks: [diy_bridge]
     container_name: 1panel
-    image: moelin/1panel:latest
+    image: docker.1ms.run/moelin/1panel:latest
     environment: {TZ: asia/shanghai,BASE_DIR: /opt,ENTRANCE: 1panel}
     volumes: ["./data/1panel:/opt/1panel","/var/run/docker.sock:/var/run/docker.sock"]
 
@@ -56,7 +67,7 @@ services:
     networks: [diy_bridge]
     restart: unless-stopped
     environment: {TZ: asia/shanghai}
-    image: twh808/unicom-login:latest
+    image: docker.1ms.run/twh808/unicom-login:latest
 
 # 青龙面板
   "qinglong":
@@ -65,9 +76,9 @@ services:
     networks: [diy_bridge]
     restart: unless-stopped
     container_name: qinglong
-    image: whyour/qinglong:latest
     environment: {TZ: asia/shanghai}
     volumes: ["./data/qinglong:/ql/data"]
+    image: docker.1ms.run/whyour/qinglong:latest
 
 # 呆呆面板
   "ddpanel":
@@ -77,8 +88,8 @@ services:
     container_name: ddpanel
     restart: unless-stopped
     environment: {TZ: asia/shanghai}
-    image: linzixuanzz/daidai-panel:latest
     volumes: ["./data/dumb-panel:/app/dumb-panel"]
+    image: docker.1ms.run/linzixuanzz/daidai-panel:latest
 
 # adguardhome
   "adguardhome":
@@ -87,8 +98,8 @@ services:
     restart: unless-stopped
     container_name: adguardhome
     environment: {TZ: asia/shanghai}
-    image: adguard/adguardhome:latest
     ports: ["8013:3000","153:53","853:853"]
+    image: docker.1ms.run/adguard/adguardhome:latest
     volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
 
 # apt-linux
@@ -97,8 +108,8 @@ services:
     networks: [diy_bridge]
     restart: unless-stopped
     container_name: aptlinux
-    image: library/debian:12
     environment: {TZ: asia/shanghai}
+    image: docker.1ms.run/library/debian:12
     entrypoint: ["/bin/bash", "-c", "set -e;m=/var/cache/.mirror_done;if [ ! -f \"$$m\" ];then (command -v curl &>/dev/null || (apt-get update && apt-get install -y curl));bash <(curl -sfsl https://gitee.com/supermanito/linuxmirrors/raw/main/changemirrors.sh) --source mirrors.tencent.com --protocol http --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$m\";fi;exec tail -f /dev/null"]
 
 # yum-linux
@@ -107,6 +118,6 @@ services:
     networks: [diy_bridge]
     restart: unless-stopped
     container_name: yumlinux
-    image: library/rockylinux:9
     environment: {TZ: asia/shanghai}
+    image: docker.1ms.run/library/rockylinux:9
     entrypoint: ["/bin/bash", "-c", "set -e;m=/var/cache/.mirror_done;if [ ! -f \"$$m\" ];then (command -v curl &>/dev/null || yum install -y curl);bash <(curl -sfsl https://gitee.com/supermanito/linuxmirrors/raw/main/changemirrors.sh) --source mirrors.tencent.com --protocol http --use-intranet-source false --install-epel true --backup true --upgrade-software true --clean-cache true --ignore-backup-tips;echo `(date)`>\"$$m\";fi;exec tail -f /dev/null"]
