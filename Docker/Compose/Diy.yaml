@@ -31,7 +31,7 @@ services:
     container_name: lucky
     environment: {TZ: Asia/Shanghai}
     image: docker.1ms.run/gdy666/lucky:latest
-    volumes: ["./data/lucky:/goodluck/data","/var/run/docker.sock:/var/run/docker.sock"]
+    volumes: ["./data/lucky:/goodluck","/var/run/docker.sock:/var/run/docker.sock"]
 
 # gately(16680)
   gately:
