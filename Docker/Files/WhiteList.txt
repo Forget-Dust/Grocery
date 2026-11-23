@@ -1,35 +1,3 @@
 # Whitelist template: ONE keyword per line
-# Case-insensitive substring match on program name
-# Upload this file to a network address, then set WL_URL above
-Microsoft Visual C++
-Microsoft .NET
-.NET Framework
-Microsoft ASP.NET Core
-Microsoft Windows Desktop Runtime
-Microsoft Edge WebView2
-Microsoft Edge
-Microsoft Defender
-Windows Defender
-Windows Security
-Microsoft Store
-Microsoft Update Health Tools
-Update for Windows
-Security Update for Windows
-Hotfix for Windows
-Windows Update
-Microsoft Visual Studio 2010 Tools for Office Runtime
-DirectX
-Microsoft XNA Framework Redistributable
-OpenAL
-NVIDIA PhysX
-Vulkan Runtime
-MSXML
-Microsoft UI Xaml
-Microsoft VCLibs
-Windows App SDK
-Windows Driver Package
-Microsoft Windows
-
-#软件合规
 企业微信
 中金e联财富版
