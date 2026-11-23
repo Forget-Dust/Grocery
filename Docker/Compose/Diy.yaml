@@ -30,7 +30,7 @@ services:
     profiles: [disabled]
     container_name: lucky
     environment: {TZ: Asia/Shanghai}
-    image: docker.1ms.run/gdy666/lucky:v2
+    image: docker.1ms.run/gdy666/lucky:latest
     volumes: ["./data/lucky:/app/conf","/var/run/docker.sock:/var/run/docker.sock"]
 
 # gately(16680)
@@ -95,7 +95,7 @@ services:
     environment: {TZ: Asia/Shanghai}
     image: docker.1ms.run/adguard/adguardhome:latest
     ports: ["8013:3000","153:53/tcp","153:53/udp","853:853/tcp","853:853/udp"]
-    volumes: ["./data/adguard/work:/opt/adguardhome/work","./data/adguard/conf:/opt/adguardhome/conf"]
+    volumes: ["./data/adguard/data:/opt/adguardhome/work/data","./data/adguard/conf:/opt/adguardhome/conf"]
 
 # apt-linux
   aptlinux:
