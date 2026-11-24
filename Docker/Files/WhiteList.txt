@@ -29,7 +29,6 @@ WPS 0ffice 增强版
 IntelliJ IDEA
 Visual Studio Code
 Everything
-Microsoft Edge浏览器
 9Q浏览器
 Q9拼音输入法
 百度输入法
