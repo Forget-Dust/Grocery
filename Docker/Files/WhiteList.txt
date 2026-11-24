@@ -4,6 +4,9 @@ Microsoft Edge
 Microsoft Visual C++
 
 # Others
+VDI
+NGNClient-TAP
+
 联软
 亚信
 企业微信
@@ -11,7 +14,6 @@ coremail邮箱
 正版化检查工具
 7zip
 腾讯会议
-云桌面VDI
 微信
 飞书
 中金E联
