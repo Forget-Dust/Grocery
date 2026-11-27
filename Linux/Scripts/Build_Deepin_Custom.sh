@@ -4,7 +4,7 @@ echo "✉  Install..."
 	(apt-get update ;apt-get install -y 7zip squashfs-tools xorriso)>/dev/null 2>&1
 
 echo "✉  Unpack_Iso..."
-	for f in *.iso ;do iso_dir="${f%.*}" && rm -rf "$iso_dir" && 7z x "$f" -o"$iso_dir" -y >/dev/null 2>&1 || continue
+	for f in "$@" ;do iso_dir="${f%.*}" && rm -rf "$iso_dir" && 7z x "$f" -o"$iso_dir" -y >/dev/null 2>&1 || continue
 
 echo "✉  Unpack_Squashfs..."
 	find "$iso_dir" -type f -name "filesystem.squashfs" | while IFS= read -r sq; do SQ_ROOT="${sq%.squashfs}_fs" && rm -rf "$SQ_ROOT" && unsquashfs -d "$SQ_ROOT" "$sq" >/dev/null 2>&1 || continue
