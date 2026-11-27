@@ -58,7 +58,7 @@ EOF
 echo "✉  Packing_Iso..."
 	rpt=$(xorriso -indev "$iso_dir.iso" -report_el_torito as_mkisofs 2>/dev/null)
 	while IFS="'" read -r k v _; do case $k in '-V ') volid=$v;; '-b ') bios=${v#/};; '-c ') cat=${v#/};; '-e ') efi=${v#/};; esac; done <<< "$rpt"
-	xorriso -as mkisofs -V "$volid" -r -J -b "$bios" -c "$cat" -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e "$efi" -no-emul-boot -isohybrid-mbr --interval:local_fs:0s-15s:zero_mbrpt,zero_gpt:"$iso_dir.iso" -isohybrid-gpt-basdat -o "$iso_dir-custom.iso" "$iso_dir"
+	xorriso -as mkisofs -V "$volid" -r -J -b "$bios" -c "$cat" -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e "$efi" -no-emul-boot -isohybrid-mbr --interval:local_fs:0s-15s:zero_mbrpt,zero_gpt:"$iso_dir.iso" -isohybrid-gpt-basdat -o "$iso_dir_Custom.iso" "$iso_dir"
 
 done;done
 echo "✉  Packing_Done"
