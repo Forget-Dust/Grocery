@@ -16,7 +16,7 @@ echo "✉  Chroot_$SQ_ROOT..."
 Deb=(deepin-manual deepin-draw deepin-boot-maker deepin-log-viewer deepin-home deepin-reader deepin-feedback deepin-voice-note dde-introduction com.deepin.lianliankan com.deepin.gomoku libreoffice* org.deepin.browser org.deepin.downloader deepin-unioncode deepin-forum laptop-mode-tools fcitx-sunpinyin deepin-diskmanager dde-printer deepin-calculator deepin-image-viewer simple-scan deepin-devicemanager deepin-album deepin-camera deepin-music deepin-movie deepin-screen-recorder deepin-font-manager deepin-mail)
 (sed -i '$a\rm -f ${tmp_file}' /usr/share/initramfs-tools/hooks/deepin-fix-init; echo "deb https://mirrors.cernet.edu.cn/deepin apricot main contrib non-free" > /etc/apt/sources.list)
 (echo "nameserver 223.5.5.5" > /etc/resolv.conf; apt-get update && for pkg in "${Deb[@]}"; do apt-get autoremove --purge --yes $pkg ;done && apt-get full-upgrade -fy; :> /etc/resolv.conf)>/dev/null 2>&1
-([[ -d "/root/Diy" ]] && { find "/root/Diy" -type f -name "*.deb" | xargs -r ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r deb; do apt-get install -y "$deb" 2>/dev/null && rm -f "$deb"; done; dpkg-query -W -f='${Package}\n' 'linux-image-[0-9]*-desktop*' 'linux-headers-[0-9]*-desktop*' | sort -t- -k3,3Vr | tail -n +3 | xargs -r apt purge -y; })>/dev/null 2>&1
+([[ -d "/root/Diy" ]] && { find "/root/Diy" -type f -name "*.deb" | xargs -r ls -Sd 2>/dev/null | awk '{print $NF}' | while read -r deb; do apt-get install -y "$deb" --fix-missing 2>/dev/null && rm -f "$deb"; done; dpkg-query -W -f='${Package}\n' 'linux-image-[0-9]*-desktop*' 'linux-headers-[0-9]*-desktop*' | sort -t- -k3,3Vr | tail -n +3 | xargs -r apt purge -y; })>/dev/null 2>&1
 INEOF
 
 echo "✉  Packing_Squashfs..."
@@ -29,26 +29,26 @@ echo "✉  Packing_Squashfs..."
 echo "✉  Configure_Startup_Menu..."
 sed -i '/^label /,$d' "$iso_dir/isolinux/live.cfg" && cat <<'EOF' | tee -a "$iso_dir/isolinux/live.cfg" >/dev/null
 label live
-	menu label ^Install Deepin 20.9
+	menu label Try Deepin 20.9
 	menu default
 	linux /live/vmlinuz
 	initrd /live/initrd
 	append boot=live components quiet splash union=overlay locales=zh_CN.UTF-8
 
 label live-safe
-	menu label Install Deepin 20.9 (^Safe graphics)
+	menu label Try Deepin 20.9 (^Safe graphics)
 	linux /live/vmlinuz
 	initrd /live/initrd
 	append boot=live components quiet splash union=overlay locales=zh_CN.UTF-8 nomodeset
 EOF
 
 sed -i '/^menuentry /,$d' "$iso_dir/boot/grub/grub.cfg" && cat <<'EOF' | tee -a "$iso_dir/boot/grub/grub.cfg" >/dev/null
-menuentry "Install Deepin 20.9" {
+menuentry "Try Deepin 20.9" {
 	set gfxpayload=keep
 	linux	/live/vmlinuz boot=live components quiet splash union=overlay locales=zh_CN.UTF-8 --
 	initrd	/live/initrd
 }
-menuentry "Install Deepin 20.9 (Safe graphics)" {
+menuentry "Try Deepin 20.9 (Safe graphics)" {
 	set gfxpayload=keep
 	linux	/live/vmlinuz boot=live components quiet splash union=overlay locales=zh_CN.UTF-8 nomodeset --
 	initrd	/live/initrd
